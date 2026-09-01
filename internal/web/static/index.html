@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="vi">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>HuzLocalNetwork - LAN Monitor</title>
+	<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+	<header>
+		<h1>HuzLocalNetwork <span class="subtitle">LAN Monitor &amp; Device Control</span></h1>
+		<div id="conn-status" class="status-pill status-connecting">connecting…</div>
+	</header>
+
+	<main>
+		<table id="devices-table">
+			<thead>
+				<tr>
+					<th>Status</th>
+					<th>IP Address</th>
+					<th>MAC Address</th>
+					<th>Vendor</th>
+					<th>Name / Alias</th>
+					<th>Last Seen</th>
+					<th>Actions</th>
+				</tr>
+			</thead>
+			<tbody id="devices-body">
+				<tr><td colspan="7" class="empty">Đang tải danh sách thiết bị…</td></tr>
+			</tbody>
+		</table>
+	</main>
+
+	<footer>
+		<small>Scan tự động mỗi 30 giây · Cập nhật realtime qua SSE</small>
+	</footer>
+
+	<script src="/static/app.js"></script>
+</body>
+</html>

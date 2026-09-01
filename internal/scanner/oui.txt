@@ -1,0 +1,52 @@
+# Curated MAC OUI -> Vendor lookup table (prefix<TAB>vendor).
+# Format: first 3 octets (no separators, uppercase hex) <TAB> vendor name.
+# This is a small curated subset for demo purposes; replace/extend with the
+# full IEEE OUI database (https://standards-oui.ieee.org/oui/oui.txt) for
+# production accuracy.
+000C29	VMware
+000569	VMware
+001C42	Parallels
+080027	VirtualBox
+525400	QEMU/KVM
+DCA632	Raspberry Pi Foundation
+B827EB	Raspberry Pi Foundation
+E45F01	Raspberry Pi Foundation
+28CDC1	Raspberry Pi Foundation
+3C5AB4	Google
+F4F5D8	Google
+A4C138	Google Nest
+001A11	Google
+7CD1C3	TP-Link
+E894F6	TP-Link
+50C7BF	TP-Link
+A0F3C1	TP-Link
+CC32E5	Ubiquiti Networks
+24A43C	Ubiquiti Networks
+FCECDA	Ubiquiti Networks
+002590	Cisco
+0018BA	Cisco
+6C416A	Cisco
+AC9E17	Apple
+F0DBE2	Apple
+3C0754	Apple
+A85C2C	Apple
+DC2B2A	Apple
+88E9FE	Apple
+BC926B	Apple
+D89695	Apple
+001451	Dell
+D067E5	Dell
+B8CA3A	Dell
+1C6600	HP
+3417EB	HP
+9CB654	HP
+5C260A	Samsung
+E8508B	Samsung
+002454	Samsung
+34145F	Samsung
+B0EC71	Xiaomi
+F8A45F	Xiaomi
+64B473	Xiaomi
+9CFC01	Amazon
+F0272D	Amazon
+44650D	Amazon

@@ -1,0 +1,81 @@
+:root {
+	--bg: #0f1115;
+	--panel: #171a21;
+	--border: #262b36;
+	--text: #e6e8ec;
+	--muted: #8b93a3;
+	--green: #37d67a;
+	--red: #ef4b4b;
+	--accent: #4f8cff;
+}
+
+* { box-sizing: border-box; }
+
+body {
+	margin: 0;
+	font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+	background: var(--bg);
+	color: var(--text);
+}
+
+header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 16px 24px;
+	border-bottom: 1px solid var(--border);
+}
+
+h1 { margin: 0; font-size: 1.25rem; }
+.subtitle { font-weight: 400; color: var(--muted); font-size: 0.95rem; margin-left: 8px; }
+
+.status-pill {
+	padding: 4px 12px;
+	border-radius: 999px;
+	font-size: 0.8rem;
+	border: 1px solid var(--border);
+}
+.status-connecting { color: var(--muted); }
+.status-online { color: var(--green); border-color: var(--green); }
+.status-offline { color: var(--red); border-color: var(--red); }
+
+main { padding: 24px; }
+
+table { width: 100%; border-collapse: collapse; background: var(--panel); border-radius: 8px; overflow: hidden; }
+thead { background: #1e222c; }
+th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+tbody tr:hover { background: #1c2027; }
+.empty { text-align: center; color: var(--muted); padding: 24px; }
+
+.dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; }
+.dot-online { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.dot-offline { background: var(--red); }
+
+.mono { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 0.85rem; color: var(--muted); }
+
+.alias-input {
+	background: #11141a;
+	border: 1px solid var(--border);
+	color: var(--text);
+	padding: 6px 8px;
+	border-radius: 6px;
+	width: 160px;
+}
+
+button.action {
+	border: 1px solid var(--border);
+	background: #1e222c;
+	color: var(--text);
+	padding: 6px 12px;
+	border-radius: 6px;
+	cursor: pointer;
+	font-size: 0.85rem;
+}
+button.action:hover { border-color: var(--accent); }
+button.action.blocked { color: var(--red); border-color: var(--red); }
+button.action.blocked:hover { background: rgba(239, 75, 75, 0.1); }
+button.action:disabled { opacity: 0.5; cursor: wait; }
+
+.blocked-badge { color: var(--red); font-size: 0.75rem; margin-left: 6px; }
+
+footer { padding: 16px 24px; color: var(--muted); text-align: center; }

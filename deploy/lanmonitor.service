@@ -1,0 +1,32 @@
+[Unit]
+Description=HuzLocalNetwork LAN Monitor & Device Control
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=lanmonitor
+Group=lanmonitor
+ExecStart=/opt/lanmonitor/lanmonitor \
+	-addr :8080 \
+	-db /var/lib/lanmonitor/lanmonitor.db \
+	-iface eth0 \
+	-gateway 192.168.1.1 \
+	-scan-interval 30s
+WorkingDirectory=/var/lib/lanmonitor
+Restart=on-failure
+RestartSec=5s
+
+# Raw socket capability must survive even though we run as non-root user.
+AmbientCapabilities=CAP_NET_RAW CAP_NET_ADMIN
+CapabilityBoundingSet=CAP_NET_RAW CAP_NET_ADMIN
+NoNewPrivileges=true
+
+# Hardening
+ProtectSystem=strict
+ReadWritePaths=/var/lib/lanmonitor
+PrivateTmp=true
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target
