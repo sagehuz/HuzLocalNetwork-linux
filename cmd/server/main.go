@@ -62,13 +62,16 @@ func main() {
 
 	hub := web.NewHub()
 	sc.OnUpdate = hub.NotifyDevicesChanged
+	discovery := scanner.NewDiscovery(database)
+	discovery.OnUpdate = hub.NotifyDevicesChanged
 
-	srv := &web.Server{DB: database, Hub: hub, Spoofer: spf}
+	srv := &web.Server{DB: database, Hub: hub, Spoofer: spf, Discovery: discovery}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
 	go sc.Run(ctx)
+	go discovery.Run(ctx)
 
 	httpServer := &http.Server{Addr: *addr, Handler: srv.Routes()}
 	go func() {

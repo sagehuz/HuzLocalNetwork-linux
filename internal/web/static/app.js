@@ -23,6 +23,16 @@ function timeAgo(iso) {
 	return `${h}h trước`;
 }
 
+function timeSince(iso) {
+	const then = new Date(iso).getTime();
+	if (Number.isNaN(then)) return "-";
+	const minutes = Math.max(0, Math.floor((Date.now() - then) / 60000));
+	if (minutes < 60) return `${minutes}p`;
+	const hours = Math.floor(minutes / 60);
+	if (hours < 24) return `${hours}h`;
+	return `${Math.floor(hours / 24)}d`;
+}
+
 function renderRow(dev) {
 	const isOnline = dev.status === "online";
 	const displayName = dev.alias || dev.hostname || "-";
@@ -38,8 +48,13 @@ function renderRow(dev) {
 			<td>${escapeHTML(dev.vendor) || "-"}</td>
 			<td>
 				<input class="alias-input" type="text" value="${escapeHTML(dev.alias)}" placeholder="${escapeHTML(dev.hostname) || "Đặt tên..."}" data-mac="${escapeHTML(dev.mac)}">
+				${dev.hostname ? `<small class="discovered-name" title="${escapeHTML(dev.hostname)}">${escapeHTML(dev.hostname)}</small>` : ""}
 				${blockedBadge}
 			</td>
+			<td>${escapeHTML(dev.device_type) || "-"}</td>
+			<td class="truncate" title="${escapeHTML([dev.manufacturer, dev.model].filter(Boolean).join(" "))}">${escapeHTML([dev.manufacturer, dev.model].filter(Boolean).join(" ")) || "-"}</td>
+			<td class="services-cell" title="${escapeHTML(dev.services)}">${escapeHTML(dev.services) || "-"}<button class="service-scan" title="Quét cổng dịch vụ phổ biến" data-mac="${escapeHTML(dev.mac)}">Scan</button></td>
+			<td title="${escapeHTML(dev.first_seen)}">${timeSince(dev.first_seen)}</td>
 			<td>${timeAgo(dev.last_seen)}</td>
 			<td><button class="${actionClass}" data-mac="${escapeHTML(dev.mac)}" data-blocked="${dev.blocked}">${actionLabel}</button></td>
 		</tr>`;
@@ -51,7 +66,7 @@ async function refreshDevices() {
 		if (!res.ok) throw new Error(`HTTP ${res.status}`);
 		const devices = await res.json();
 		if (!devices || devices.length === 0) {
-			tbody.innerHTML = `<tr><td colspan="7" class="empty">Chưa phát hiện thiết bị nào.</td></tr>`;
+			tbody.innerHTML = `<tr><td colspan="11" class="empty">Chưa phát hiện thiết bị nào.</td></tr>`;
 			return;
 		}
 		tbody.innerHTML = devices.map(renderRow).join("");
@@ -61,6 +76,19 @@ async function refreshDevices() {
 }
 
 tbody.addEventListener("click", async (e) => {
+	const scanButton = e.target.closest("button.service-scan");
+	if (scanButton) {
+		scanButton.disabled = true;
+		try {
+			const res = await fetch(`/api/devices/${encodeURIComponent(scanButton.dataset.mac)}/services/scan`, { method: "POST" });
+			if (!res.ok) throw new Error(await res.text());
+			setTimeout(refreshDevices, 3000);
+		} catch (err) {
+			alert(`Không thể quét dịch vụ: ${err.message}`);
+			scanButton.disabled = false;
+		}
+		return;
+	}
 	const btn = e.target.closest("button.action");
 	if (!btn) return;
 	const mac = btn.dataset.mac;

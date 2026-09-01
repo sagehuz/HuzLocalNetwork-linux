@@ -1,0 +1,70 @@
+# Ignore node/npm
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs
+dist/
+build/
+out/
+bin/
+pkg/
+
+# Go build/test artifacts
+*.exe
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+coverage.out
+
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+
+# Java
+target/
+
+# Ruby
+*.gem
+
+# C/C++
+*.o
+*.a
+*.lib
+
+# Large archives and DBs
+*.tar.gz
+*.zip
+*.sqlite3
+*.db
+
+# Logs, locks, env
+*.log
+*.lock
+.env
+.env.*
+
+# IDE / Editor
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+.DS_Store
+
+# Docker / Terraform
+.docker/
+.terraform/
+
+# Misc
+.cache/
+coverage/
+node-repl.history
+
+# Project-specific heavy files you may want to exclude (uncomment if needed)
+# internal/scanner/oui.txt
+# internal/spoofer/some_large_file.bin

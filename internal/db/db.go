@@ -4,6 +4,7 @@ package db
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 
 	_ "modernc.org/sqlite"
@@ -11,15 +12,21 @@ import (
 
 // Device represents a single LAN host tracked by the monitor.
 type Device struct {
-	MAC       string    `json:"mac"`
-	IP        string    `json:"ip"`
-	Vendor    string    `json:"vendor"`
-	Hostname  string    `json:"hostname"`
-	Alias     string    `json:"alias"`
-	Status    string    `json:"status"` // "online" | "offline"
-	Blocked   bool      `json:"blocked"`
-	FirstSeen time.Time `json:"first_seen"`
-	LastSeen  time.Time `json:"last_seen"`
+	MAC                 string     `json:"mac"`
+	IP                  string     `json:"ip"`
+	Vendor              string     `json:"vendor"`
+	Hostname            string     `json:"hostname"`
+	DeviceType          string     `json:"device_type"`
+	Manufacturer        string     `json:"manufacturer"`
+	Model               string     `json:"model"`
+	Services            string     `json:"services"`
+	LastEnriched        *time.Time `json:"last_enriched"`
+	LastServicesScanned *time.Time `json:"last_services_scanned"`
+	Alias               string     `json:"alias"`
+	Status              string     `json:"status"` // "online" | "offline"
+	Blocked             bool       `json:"blocked"`
+	FirstSeen           time.Time  `json:"first_seen"`
+	LastSeen            time.Time  `json:"last_seen"`
 }
 
 // DB wraps the underlying sql.DB with the schema used by the application.
@@ -39,6 +46,10 @@ func Open(path string) (*DB, error) {
 		conn.Close()
 		return nil, fmt.Errorf("migrate schema: %w", err)
 	}
+	if err := migrateDevices(conn); err != nil {
+		conn.Close()
+		return nil, fmt.Errorf("migrate device fields: %w", err)
+	}
 	return &DB{conn: conn}, nil
 }
 
@@ -53,6 +64,12 @@ CREATE TABLE IF NOT EXISTS devices (
 	ip         TEXT NOT NULL DEFAULT '',
 	vendor     TEXT NOT NULL DEFAULT '',
 	hostname   TEXT NOT NULL DEFAULT '',
+	device_type TEXT NOT NULL DEFAULT '',
+	manufacturer TEXT NOT NULL DEFAULT '',
+	model      TEXT NOT NULL DEFAULT '',
+	services   TEXT NOT NULL DEFAULT '',
+	last_enriched DATETIME,
+	last_services_scanned DATETIME,
 	alias      TEXT NOT NULL DEFAULT '',
 	status     TEXT NOT NULL DEFAULT 'offline',
 	blocked    INTEGER NOT NULL DEFAULT 0,
@@ -67,6 +84,25 @@ CREATE TABLE IF NOT EXISTS history (
 	at        DATETIME NOT NULL
 );
 `
+
+func migrateDevices(conn *sql.DB) error {
+	columns := []string{
+		"device_type TEXT NOT NULL DEFAULT ''",
+		"manufacturer TEXT NOT NULL DEFAULT ''",
+		"model TEXT NOT NULL DEFAULT ''",
+		"services TEXT NOT NULL DEFAULT ''",
+		"last_enriched DATETIME",
+		"last_services_scanned DATETIME",
+	}
+	for _, column := range columns {
+		if _, err := conn.Exec("ALTER TABLE devices ADD COLUMN " + column); err != nil {
+			if !strings.Contains(err.Error(), "duplicate column name") {
+				return err
+			}
+		}
+	}
+	return nil
+}
 
 // UpsertSeen records that a device replied to a scan, creating it if new.
 func (d *DB) UpsertSeen(mac, ip, vendor, hostname string) (isNew bool, err error) {
@@ -149,14 +185,40 @@ func (d *DB) SetBlocked(mac string, blocked bool) error {
 	return err
 }
 
+// UpdateEnrichment stores identity metadata learned outside the ARP sweep.
+func (d *DB) UpdateEnrichment(mac, hostname, deviceType, manufacturer, model string) error {
+	_, err := d.conn.Exec(`
+		UPDATE devices
+		SET hostname = CASE WHEN ? != '' THEN ? ELSE hostname END,
+		    device_type = CASE WHEN ? != '' THEN ? ELSE device_type END,
+		    manufacturer = CASE WHEN ? != '' THEN ? ELSE manufacturer END,
+		    model = CASE WHEN ? != '' THEN ? ELSE model END,
+		    last_enriched = ?
+		WHERE mac = ?`,
+		hostname, hostname, deviceType, deviceType, manufacturer, manufacturer, model, model,
+		time.Now().UTC(), mac)
+	return err
+}
+
+// UpdateServices stores the cached result of a bounded service scan.
+func (d *DB) UpdateServices(mac, services string) error {
+	_, err := d.conn.Exec(`
+		UPDATE devices SET services = ?, last_services_scanned = ? WHERE mac = ?`,
+		services, time.Now().UTC(), mac)
+	return err
+}
+
 // Get returns a single device by MAC address.
 func (d *DB) Get(mac string) (Device, error) {
 	var dev Device
 	var blocked int
 	err := d.conn.QueryRow(`
-		SELECT mac, ip, vendor, hostname, alias, status, blocked, first_seen, last_seen
+		SELECT mac, ip, vendor, hostname, device_type, manufacturer, model, services,
+		       last_enriched, last_services_scanned, alias, status, blocked, first_seen, last_seen
 		FROM devices WHERE mac = ?`, mac).
-		Scan(&dev.MAC, &dev.IP, &dev.Vendor, &dev.Hostname, &dev.Alias, &dev.Status, &blocked, &dev.FirstSeen, &dev.LastSeen)
+		Scan(&dev.MAC, &dev.IP, &dev.Vendor, &dev.Hostname, &dev.DeviceType, &dev.Manufacturer,
+			&dev.Model, &dev.Services, &dev.LastEnriched, &dev.LastServicesScanned, &dev.Alias,
+			&dev.Status, &blocked, &dev.FirstSeen, &dev.LastSeen)
 	dev.Blocked = blocked != 0
 	return dev, err
 }
@@ -164,7 +226,8 @@ func (d *DB) Get(mac string) (Device, error) {
 // All returns every known device ordered by IP address.
 func (d *DB) All() ([]Device, error) {
 	rows, err := d.conn.Query(`
-		SELECT mac, ip, vendor, hostname, alias, status, blocked, first_seen, last_seen
+		SELECT mac, ip, vendor, hostname, device_type, manufacturer, model, services,
+		       last_enriched, last_services_scanned, alias, status, blocked, first_seen, last_seen
 		FROM devices ORDER BY ip`)
 	if err != nil {
 		return nil, err
@@ -175,7 +238,9 @@ func (d *DB) All() ([]Device, error) {
 	for rows.Next() {
 		var dev Device
 		var blocked int
-		if err := rows.Scan(&dev.MAC, &dev.IP, &dev.Vendor, &dev.Hostname, &dev.Alias, &dev.Status, &blocked, &dev.FirstSeen, &dev.LastSeen); err != nil {
+		if err := rows.Scan(&dev.MAC, &dev.IP, &dev.Vendor, &dev.Hostname, &dev.DeviceType, &dev.Manufacturer,
+			&dev.Model, &dev.Services, &dev.LastEnriched, &dev.LastServicesScanned, &dev.Alias,
+			&dev.Status, &blocked, &dev.FirstSeen, &dev.LastSeen); err != nil {
 			return nil, err
 		}
 		dev.Blocked = blocked != 0
