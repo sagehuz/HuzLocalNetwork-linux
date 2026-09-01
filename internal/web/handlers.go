@@ -36,8 +36,7 @@ func (s *Server) Routes() http.Handler {
 	fileServer := http.FileServer(http.FS(staticSub))
 
 	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
-		r.URL.Path = "/index.html"
-		fileServer.ServeHTTP(w, r)
+    fileServer.ServeHTTP(w, r)
 	})
 	mux.Handle("GET /static/", http.StripPrefix("/static/", fileServer))
 
