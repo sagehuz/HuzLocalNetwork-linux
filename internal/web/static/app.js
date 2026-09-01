@@ -47,13 +47,13 @@ function renderRow(dev) {
 			<td class="mono">${escapeHTML(dev.mac)}</td>
 			<td>${escapeHTML(dev.vendor) || "-"}</td>
 			<td>
-				<input class="alias-input" type="text" value="${escapeHTML(dev.alias)}" placeholder="${escapeHTML(dev.hostname) || "Đặt tên..."}" data-mac="${escapeHTML(dev.mac)}">
+				<input class="alias-input" type="text" value="${escapeHTML(dev.alias)}" placeholder="${escapeHTML(dev.hostname) || "name it..."}" data-mac="${escapeHTML(dev.mac)}">
 				${dev.hostname ? `<small class="discovered-name" title="${escapeHTML(dev.hostname)}">${escapeHTML(dev.hostname)}</small>` : ""}
 				${blockedBadge}
 			</td>
 			<td>${escapeHTML(dev.device_type) || "-"}</td>
 			<td class="truncate" title="${escapeHTML([dev.manufacturer, dev.model].filter(Boolean).join(" "))}">${escapeHTML([dev.manufacturer, dev.model].filter(Boolean).join(" ")) || "-"}</td>
-			<td class="services-cell" title="${escapeHTML(dev.services)}">${escapeHTML(dev.services) || "-"}<button class="service-scan" title="Quét cổng dịch vụ phổ biến" data-mac="${escapeHTML(dev.mac)}">Scan</button></td>
+			<td class="services-cell" title="${escapeHTML(dev.services)}">${escapeHTML(dev.services) || "-"}<button class="service-scan" title="Scan common service ports" data-mac="${escapeHTML(dev.mac)}">Scan</button></td>
 			<td title="${escapeHTML(dev.first_seen)}">${timeSince(dev.first_seen)}</td>
 			<td>${timeAgo(dev.last_seen)}</td>
 			<td><button class="${actionClass}" data-mac="${escapeHTML(dev.mac)}" data-blocked="${dev.blocked}">${actionLabel}</button></td>
@@ -66,7 +66,7 @@ async function refreshDevices() {
 		if (!res.ok) throw new Error(`HTTP ${res.status}`);
 		const devices = await res.json();
 		if (!devices || devices.length === 0) {
-			tbody.innerHTML = `<tr><td colspan="11" class="empty">Chưa phát hiện thiết bị nào.</td></tr>`;
+			tbody.innerHTML = `<tr><td colspan="11" class="empty">No devices detected.</td></tr>`;
 			return;
 		}
 		tbody.innerHTML = devices.map(renderRow).join("");
@@ -84,7 +84,7 @@ tbody.addEventListener("click", async (e) => {
 			if (!res.ok) throw new Error(await res.text());
 			setTimeout(refreshDevices, 3000);
 		} catch (err) {
-			alert(`Không thể quét dịch vụ: ${err.message}`);
+			alert(`Unable to scan services: ${err.message}`);
 			scanButton.disabled = false;
 		}
 		return;
@@ -100,7 +100,7 @@ tbody.addEventListener("click", async (e) => {
 		if (!res.ok) throw new Error(await res.text());
 		await refreshDevices();
 	} catch (err) {
-		alert(`Không thể ${endpoint} thiết bị: ${err.message}`);
+		alert(`Unable to ${endpoint} device: ${err.message}`);
 		btn.disabled = false;
 	}
 });
